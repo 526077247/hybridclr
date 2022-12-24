@@ -136,21 +136,8 @@ namespace metadata
 
         Il2CppAssembly* ass;
         Il2CppImage* image2;
-        if ((ass = FindPlaceHolderAssembly(nameNoExt)) != nullptr)
-        {
-            if (ass->token)
-            {
-                RaiseExecutionEngineException("reloading placeholder assembly is not supported!");
-            }
-            image2 = ass->image;
-            IL2CPP_FREE((void*)ass->image->name);
-            IL2CPP_FREE((void*)ass->image->nameNoExt);
-        }
-        else
-        {
-            ass = new (IL2CPP_MALLOC_ZERO(sizeof(Il2CppAssembly))) Il2CppAssembly;
-            image2 = new (IL2CPP_MALLOC_ZERO(sizeof(Il2CppImage))) Il2CppImage;
-        }
+        ass = new (IL2CPP_MALLOC_ZERO(sizeof(Il2CppAssembly))) Il2CppAssembly;
+        image2 = new (IL2CPP_MALLOC_ZERO(sizeof(Il2CppImage))) Il2CppImage;
 
         image->InitBasic(image2);
         image->BuildIl2CppAssembly(ass);
