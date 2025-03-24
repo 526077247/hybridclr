@@ -12,6 +12,7 @@
 #include "vm/Class.h"
 #include "vm/String.h"
 #include "vm/MetadataLock.h"
+#include "vm/MetadataCache.h"
 
 #include "Image.h"
 #include "MetadataModule.h"
@@ -158,6 +159,8 @@ namespace metadata
         image2->assembly = ass;
 
         image->InitRuntimeMetadatas();
+
+        il2cpp::vm::MetadataCache::RegisterInterpreterAssembly(ass);
         return ass;
     }
 

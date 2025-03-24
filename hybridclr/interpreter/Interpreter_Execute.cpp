@@ -1267,7 +1267,7 @@ namespace interpreter
 #define LOAD_PREV_FRAME() { \
 	imi = (const InterpMethodInfo*)frame->method->interpData; \
 	ip = frame->ip; \
-	frame->ip = (byte*)&ip; \
+	frame->ip = (byte*)ip; \
 	ipBase = imi->codes; \
 	localVarBase = frame->stackBasePtr; \
 }
@@ -1276,8 +1276,8 @@ namespace interpreter
 	imi = newMethodInfo->interpData ? (InterpMethodInfo*)newMethodInfo->interpData : InterpreterModule::GetInterpMethodInfo(newMethodInfo); \
 	frame = interpFrameGroup.EnterFrameFromNative(newMethodInfo, argBasePtr); \
 	frame->ret = retPtr; \
-	frame->ip = (byte*)&ip; \
 	ip = ipBase = imi->codes; \
+	frame->ip = (byte*)ip; \
 	localVarBase = frame->stackBasePtr; \
 }
 
@@ -1285,8 +1285,8 @@ namespace interpreter
 	imi = newMethodInfo->interpData ? (InterpMethodInfo*)newMethodInfo->interpData : InterpreterModule::GetInterpMethodInfo(newMethodInfo); \
 	frame = interpFrameGroup.EnterFrameFromInterpreter(newMethodInfo, argBasePtr); \
 	frame->ret = retPtr; \
-	frame->ip = (byte*)&ip; \
 	ip = ipBase = imi->codes; \
+	frame->ip = (byte*)ip; \
 	localVarBase = frame->stackBasePtr; \
 }
 
@@ -1686,19 +1686,48 @@ const int32_t kMaxRetValueTypeStackObjectSize = 1024;
 			{
 				switch (*(HiOpcodeEnum*)ip)
 				{
+					// avoid decrement *ip when compute jump table,  boosts about 5% performance
+				case HiOpcodeEnum::None:
+				{
+					continue;
+				}
 #pragma region memory
 					//!!!{{MEMORY
 				case HiOpcodeEnum::InitLocals_n_2:
 				{
 					uint16_t __size = *(uint16_t*)(ip + 2);
-					InitDefaultN(localVarBase + imi->localVarBaseOffset, __size);
+					InitDefaultN(localVarBase, __size);
 				    ip += 8;
 				    continue;
 				}
 				case HiOpcodeEnum::InitLocals_n_4:
 				{
 					uint32_t __size = *(uint32_t*)(ip + 4);
-					InitDefaultN(localVarBase + imi->localVarBaseOffset, __size);
+					InitDefaultN(localVarBase, __size);
+				    ip += 8;
+				    continue;
+				}
+				case HiOpcodeEnum::InitLocals_size_8:
+				{
+					InitDefault8(localVarBase);
+				    ip += 8;
+				    continue;
+				}
+				case HiOpcodeEnum::InitLocals_size_16:
+				{
+					InitDefault16(localVarBase);
+				    ip += 8;
+				    continue;
+				}
+				case HiOpcodeEnum::InitLocals_size_24:
+				{
+					InitDefault24(localVarBase);
+				    ip += 8;
+				    continue;
+				}
+				case HiOpcodeEnum::InitLocals_size_32:
+				{
+					InitDefault32(localVarBase);
 				    ip += 8;
 				    continue;
 				}
@@ -1716,6 +1745,34 @@ const int32_t kMaxRetValueTypeStackObjectSize = 1024;
 					uint32_t __offset = *(uint32_t*)(ip + 8);
 					InitDefaultN(localVarBase + __offset, __size);
 				    ip += 16;
+				    continue;
+				}
+				case HiOpcodeEnum::InitInlineLocals_size_8:
+				{
+					uint32_t __offset = *(uint32_t*)(ip + 4);
+					InitDefault8(localVarBase + __offset);
+				    ip += 8;
+				    continue;
+				}
+				case HiOpcodeEnum::InitInlineLocals_size_16:
+				{
+					uint32_t __offset = *(uint32_t*)(ip + 4);
+					InitDefault16(localVarBase + __offset);
+				    ip += 8;
+				    continue;
+				}
+				case HiOpcodeEnum::InitInlineLocals_size_24:
+				{
+					uint32_t __offset = *(uint32_t*)(ip + 4);
+					InitDefault24(localVarBase + __offset);
+				    ip += 8;
+				    continue;
+				}
+				case HiOpcodeEnum::InitInlineLocals_size_32:
+				{
+					uint32_t __offset = *(uint32_t*)(ip + 4);
+					InitDefault32(localVarBase + __offset);
+				    ip += 8;
 				    continue;
 				}
 				case HiOpcodeEnum::LdlocVarVar:
@@ -11362,7 +11419,7 @@ const int32_t kMaxRetValueTypeStackObjectSize = 1024;
 				{
 					uint16_t __dst = *(uint16_t*)(ip + 2);
 					uint16_t __src = *(uint16_t*)(ip + 4);
-				    (*(int32_t*)(localVarBase + __dst)) = GetEnumLongHashCode({(*(void**)(localVarBase + __src))});
+				    (*(int32_t*)(localVarBase + __dst)) = GetEnumLongHashCode((*(void**)(localVarBase + __src)));
 				    ip += 8;
 				    continue;
 				}
